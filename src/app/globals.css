@@ -1,1 +1,97 @@
 @import "tailwindcss";
+/* 针对你解析器输出的容器类名 */
+.markdown-body {
+  line-height: 1.6;
+  word-wrap: break-word;
+}
+
+/* --- 列表样式 --- */
+.markdown-body ul {
+  list-style-type: disc; /* 显示实心圆点 */
+  margin-left: 1.5rem;   /* 给符号留出左侧空间 */
+  margin-bottom: 1rem;
+}
+
+.markdown-body ol {
+  list-style-type: decimal; /* 显示数字序号 */
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.markdown-body ul, 
+.markdown-body ol {
+  padding-left: 2rem; /* 必须有 padding，否则缩进看不出来 */
+  list-style-position: outside; /* 确保圆点在文字外面 */
+}
+
+.markdown-body li {
+  margin-bottom: 0.25rem;
+  display: list-item; /* 确保它是以列表项形式显示 */
+}
+
+/* 多级嵌套列表 */
+.markdown-body ul ul, 
+.markdown-body ol ul {
+  list-style-type: circle; /* 二级列表显示空心圆点 */
+  margin-top: 0.25rem;
+}
+
+/* --- 标题样式修复 --- */
+.markdown-body h1, .markdown-body h2, .markdown-body h3 {
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+}
+.markdown-body h1 { font-size: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+.markdown-body h2 { font-size: 1.25rem; }
+
+/* --- 引用块样式 (针对 blockquote.js) --- */
+.markdown-body blockquote {
+  padding: 0 1rem;
+  color: #6a737d;
+  border-left: 0.25rem solid #dfe2e5;
+  margin: 1rem 0;
+}
+/* 代码块背景与圆角 */
+.markdown-body pre {
+  padding: 1rem;
+  overflow: auto;
+  background-color: #f6f8fa;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.markdown-body code {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 85%;
+  background-color: rgba(27,31,35,0.05);
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+}
+
+/* 独立块级公式居中 */
+.katex-display {
+  margin: 1rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+/* 确保公式容器不会溢出，并且居中 */
+.katex-display {
+  margin: 1.5em 0;
+  padding: 0.5em;
+  overflow-x: auto; /* 防止长公式撑破布局 */
+  overflow-y: hidden;
+  text-align: center;
+}
+
+/* 行内公式样式微调 */
+.katex {
+  font-size: 1.1em; /* 让公式比文字略大，更容易看清 */
+  line-height: 1.2;
+}
+
+/* 修复在列表中的公式缩进 */
+.markdown-body li .katex-display {
+  margin: 0.5em 0;
+}

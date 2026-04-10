@@ -2,6 +2,9 @@
 
 import {useState} from 'react'
 import { Send, Bot, User, Loader2 } from "lucide-react";
+import { parseMarkdown } from 'markdown-three-parser';
+import 'katex/dist/katex.min.css';
+import 'prismjs/themes/prism-tomorrow.css';
 
 export default function ChatPage() {
   // 消息列表状态
@@ -63,7 +66,7 @@ export default function ChatPage() {
           <div key={msg.id} className={`flex ${msg.role === "user" ? 'justify-end' : 'justify-start'}`}>
             <div className={`p-3 rounded-lg flex items-center gap-2 max-w-[80%] ${msg.role === "user" ? 'bg-blue-500 text-white' :  'bg-white text-gray-800'}`} >
               {msg.role ===  'user' ? <User size={18}></User> : <Bot size={18}></Bot>}
-              <span>{msg.content}</span>
+              <div className='markdown-body text-black' dangerouslySetInnerHTML={{ __html: parseMarkdown(msg.content) }}></div>
             </div>
           </div>
         ))}

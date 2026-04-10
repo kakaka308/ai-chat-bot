@@ -19,8 +19,10 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
-    }
+      "@/*": ["./src/*"],
+      // 添加下面这一行，告诉 TS 看到这个包名就去 packages 文件夹找
+      "markdown-three-parser": ["./packages/markdown-three-parser/index.js"] 
+    },
   },
   "include": [
     "next-env.d.ts",
