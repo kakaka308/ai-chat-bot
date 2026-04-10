@@ -1,6 +1,6 @@
 "use client";
 
-import {useState} from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Send, Bot, User, Loader2 } from "lucide-react";
 import { parseMarkdown } from 'markdown-three-parser';
 import 'katex/dist/katex.min.css';
@@ -13,8 +13,19 @@ export default function ChatPage() {
   ]);
   // 输入框状态
   const [input, setInput] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   // 记录 AI 是否正在说话
   const [isLoading, setIsLoading] = useState(false);
+
+  // 输入框高度
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+    }
+  }, [input])
+
   // 发送消息时，添加新消息到 messages
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -83,12 +94,19 @@ export default function ChatPage() {
 
       {/* 底部输入框 */}
       <footer className='p-4 bg-white border-t'>
-        <div className="flex gap-2 max-w-4xl mx-auto">
-          <input type="text"  
+        <div className="flex gap-2 max-w-4xl mx-auto items-end">
+          <textarea 
+            ref={textareaRef}  
             className='flex-1 border p-2 rounded-lg outline-none focus: ring-2 focus:ring-blue-400 text-black' 
+            rows={1}
             value = {input}
             onChange={(e) => setInput(e.target.value)} 
-            onKeyDown={(e) => e.key ===  'Enter' && handleSend()} 
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault(); // 阻止默认的换行行为
+                handleSend();
+              }
+            }} 
             placeholder= {isLoading ? "AI 正在回复中" : "请输入消息……"}/>
           <button onClick={handleSend} className='bg-blue-500 text-white p-2 rounded-lg'>
             <Send size={18} />
