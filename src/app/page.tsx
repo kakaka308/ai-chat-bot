@@ -43,7 +43,7 @@ export default function ChatPage() {
         <div className="flex gap-2 max-w-4xl mx-auto">
           <input type="text"  
             className='flex-1 border p-2 rounded-lg outline-none focus: ring-2 focus:ring-blue-400 text-black' 
-            value = 'input' 
+            value = {input}
             onChange={(e) => setInput(e.target.value)} 
             onKeyDown={(e) => e.key ===  'Enter' && handleSend()} 
             placeholder='hahhaha'/>
