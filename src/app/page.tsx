@@ -5,6 +5,8 @@ import { Send, Bot, User, Loader2 } from "lucide-react";
 import { parseMarkdown } from 'markdown-three-parser';
 import 'katex/dist/katex.min.css';
 import 'prismjs/themes/prism-tomorrow.css';
+import { createRoot } from 'react-dom/client';
+import ThreeScene from '../components/ThreeScene';
 
 export default function ChatPage() {
   // 消息列表状态
@@ -25,6 +27,21 @@ export default function ChatPage() {
       textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
     }
   }, [input])
+
+ useEffect(() => {
+    // 找到所有生成的 3D 占位符
+    const containers = document.querySelectorAll('.three-preview:not([data-rendered])');
+
+    containers.forEach(container => {
+      container.setAttribute('data-rendered', 'true');
+
+      // 使用 createRoot 挂载
+      const root = createRoot(container);
+      // 这里的 ThreeScene 就是你刚才写的那个组件
+      root.render(<ThreeScene container={container as HTMLElement} />);
+    });
+  }, [messages]);
+
 
   // 发送消息时，添加新消息到 messages
   const handleSend = async () => {

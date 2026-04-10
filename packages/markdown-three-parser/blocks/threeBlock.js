@@ -10,19 +10,19 @@ export function createThreeBlockParser() {
     startOrEnd(line, html) {
       const trimmed = line.trim()
 
-      if (trimmed === ':::three') {
-        inThreeJsBlock = true
-        threeJsObjects = []
-        return true
+      if (/^:::three\s*$/.test(trimmed)) {
+        inThreeJsBlock = true;
+        threeJsObjects = [];
+        return true;
       }
 
-      if (trimmed === ':::' && inThreeJsBlock) {
+      if (/^:::\s*$/.test(trimmed) && inThreeJsBlock) {
         html.push(
           `<div class="three-preview" data-objects='${JSON.stringify(threeJsObjects)}'></div>`
-        )
-        inThreeJsBlock = false
-        threeJsObjects = []
-        return true
+        );
+        inThreeJsBlock = false;
+        threeJsObjects = [];
+        return true;
       }
 
       return false
