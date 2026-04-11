@@ -41,16 +41,21 @@ export const useChat = () => {
       root.render(<ThreeScene container={container as HTMLElement} />);
     });
   }, [messages]);
+
   // 发送消息时，添加新消息到 messages
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
     const userContent = input;
     setInput("");
     setIsLoading(true);
+
     const userMessage: Message = { id: Date.now(), role: "user", content: userContent };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
-    
+    const aiMessageId = Date.now() + 1;
+    const aiMessage: Message = { id: aiMessageId, role: "assistant", content: "" };
+    setMessages((prev) => [...prev, aiMessage]);
+
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -62,17 +67,62 @@ export const useChat = () => {
 
       if (!response.ok) throw new Error("请求后端 API失败");
       
-      const aiMessage = await response.json();
-      setMessages((prev) => [
-        ...prev,
-        { id: Date.now() + 1, role: "assistant", content: aiMessage.content },
-      ]);
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("无法读取响应流");
+      }
+      const decoder = new TextDecoder();
+      let fullContent = "";
+      while(true) {
+        const { done, value } = await reader.read()
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          if (!trimmedLine) continue;
+          if (trimmedLine === "[DONE]" || trimmedLine === "data: [DONE]") {
+            continue;
+          }
+          if (trimmedLine.startsWith("data:")) {
+            try {
+              const data = JSON.parse(trimmedLine.slice(6));
+              const deltaContent = data.choices?.[0]?.delta?.content || "";
+              if (deltaContent) {
+                fullContent += deltaContent;
+                setMessages((prev) => {
+                  const newMessages = [...prev];
+                  const lastIndex = newMessages.length - 1;
+                  if (newMessages[lastIndex].id === aiMessageId) {
+                    newMessages[lastIndex] = {
+                      ...newMessages[lastIndex],
+                      content: fullContent,
+                    };
+                  }
+                  return newMessages;
+                });
+              };
+            } catch(error) {
+              console.error(`JSON 解析失败:`, error);
+            };
+          }
+        }
+      }
+
     } catch(error) {
       console.error("出错啦:", error);
-      setMessages((prev) => [
-        ...prev,
-        { id: Date.now() + 1, role: "assistant", content: "抱歉，我刚才走神了，请稍后再试。" },
-      ]);
+      const errorMsg = error instanceof Error ? error.message : "未知错误";    
+      setMessages((prev) => {
+        const newMessages = [...prev];
+        const lastIndex = newMessages.length - 1;
+        if (newMessages[lastIndex].id === aiMessageId) {
+          newMessages[lastIndex] = {
+            ...newMessages[lastIndex],
+            content: `错误: ${errorMsg}`,
+          };
+        }
+        return newMessages;
+      });
     } finally {
       setIsLoading(false);
     }
@@ -87,3 +137,5 @@ export const useChat = () => {
     textareaRef,
   };
 };
+
+
