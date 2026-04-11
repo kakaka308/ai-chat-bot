@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import * as THREE from 'three';
 
 interface ThreeObject {
@@ -10,9 +10,8 @@ interface ThreeObject {
 }
 
 export default function ThreeScene({ container } : { container: HTMLElement }) {
-  const mountRef = useRef<HTMLElement>(null);
   useEffect(() => {
-    // 1. 获取解析器存放在 data-objects 中的数据
+    // 1. 获取解析器存放在 data-objects 中的数据s
     const dataStr = container.getAttribute('data-objects');
     if (!dataStr) return;
     const objects: ThreeObject[] = JSON.parse(dataStr);
