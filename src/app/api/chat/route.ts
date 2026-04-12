@@ -1,20 +1,28 @@
 import { NextResponse } from "next/server";
+import { getContext } from "@/lib/rag";
 
 export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
+    const userQuery = messages[messages.length - 1].content;
+    const context = await getContext(userQuery, "diary_assistant");
     const fullMessages = [
       {
         role: "system",
-        content: `你是一个 3D 助手。当用户要求画图时，请严格使用以下格式：
-        1. 当用户要求画图时，直接输出 :::three ... ::: 格式。
-      2. 严禁将 :::three 包裹在 \`\`\` 代码块内！
-      3. 指令格式必须符合：# 形状 (颜色, 半径/大小)。
-      例如：
-        :::three
-        # sphere (red, 1)
-        :::
-        除此之外不要解释，直接输出代码块。`
+        content: `你是一个全能助手，现在拥有用户的“个人日记”和“本地知识”访问权限。
+        
+        # 已查找到的背景资料：
+        ${context ? context : "未找到相关日记记录。"}
+        # 你的任务：
+        1. 如果背景资料中有相关内容，请结合背景资料友好地回答用户。
+        2. 如果涉及 3D 指令，严格使用 :::three 格式,当用户要求画图时，直接输出 :::three ... ::: ,
+        格式严禁将 :::three 包裹在 \`\`\` 代码块内！
+        指令格式必须符合：# 形状 (颜色, 半径/大小)。
+        例如：
+          :::three
+          # sphere (red, 1)
+          :::,
+        3. 不要直接说“根据背景资料”，要自然地像老朋友一样聊天。`
       },
       ...messages
     ];
