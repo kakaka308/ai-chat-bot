@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import { createRoot } from 'react-dom/client';
-import ThreeScene from '../Three/ThreeScene';
+// import { createRoot } from 'react-dom/client';
+// import ThreeScene from '../Three/ThreeScene';
 
 export interface Message {
   id: number;
@@ -31,16 +31,16 @@ export const useChat = () => {
     }
   }, [input]);
 
-  // 在聊天消息中自动查找并渲染 3D 预览内容
-  useEffect(() => {
-    // 找到所有生成的 3D 占位符
-    const containers = document.querySelectorAll('.three-preview:not([data-rendered])');
-    containers.forEach(container => {
-      container.setAttribute('data-rendered', 'true');
-      const root = createRoot(container);
-      root.render(<ThreeScene container={container as HTMLElement} />);
-    });
-  }, [messages]);
+  // // 在聊天消息中自动查找并渲染 3D 预览内容
+  // useEffect(() => {
+  //   // 找到所有生成的 3D 占位符
+  //   const containers = document.querySelectorAll('.three-preview:not([data-rendered])');
+  //   containers.forEach(container => {
+  //     container.setAttribute('data-rendered', 'true');
+  //     const root = createRoot(container);
+  //     root.render(<ThreeScene container={container as HTMLElement} />);
+  //   });
+  // }, [messages]);
 
   // 发送消息时，添加新消息到 messages
   const handleSend = async () => {

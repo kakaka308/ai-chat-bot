@@ -1,4 +1,7 @@
+"use client";
+
 import "./globals.css"
+import { ThreePreviewWrapper } from "@/components/Three";
 
 export default function RootLayout({
   children,
@@ -7,7 +10,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh">
-      <body>{children}</body>
+      <body>
+        {children}
+        <ThreePreviewWrapper />
+      </body>
     </html>
   );
 }
