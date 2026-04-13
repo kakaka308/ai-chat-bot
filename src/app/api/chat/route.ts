@@ -5,7 +5,16 @@ export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
     const userQuery = messages[messages.length - 1].content;
-    const context = await getContext(userQuery, "diary_assistant");
+    const diaryData = await getContext(userQuery, "diary_assistant");
+    const generalData = await getContext(userQuery, "general_knowledge");
+    const threeData = await getContext(userQuery, "my_3d_knowledge");
+
+    // 然后合并它们
+    const context = `
+      来自日记：${diaryData}
+      来自通用库：${generalData}
+      来自3D库：${threeData}
+    `;
     const fullMessages = [
       {
         role: "system",
