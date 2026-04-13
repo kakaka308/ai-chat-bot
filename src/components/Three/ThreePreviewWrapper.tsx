@@ -1,4 +1,3 @@
-// ThreePreviewWrapper.tsx
 "use client";
 import { useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -6,31 +5,24 @@ import ThreeScene from './ThreeScene';
 
 export function ThreePreviewWrapper() {
   const initializedRef = useRef(false);
-  const renderedContainers = useRef(new Set<HTMLElement>()); // 记录已渲染的容器
-  
+  const renderedContainers = useRef(new Set<HTMLElement>());
   useEffect(() => {
     if (initializedRef.current) return;
-    
     console.log('ThreePreviewWrapper: 初始化');
-    
-    // 处理容器的函数
+    // 把 DOM 节点变成 Three.js 渲染区域
     const processContainer = (container: HTMLElement) => {
-      // 如果已经渲染过，跳过
       if (renderedContainers.current.has(container)) {
         console.log('容器已渲染过，跳过:', container);
         return;
       }
-      
       console.log('处理容器:', container);
-      console.log('data-objects:', container.getAttribute('data-objects'));
-      
-      // 检查是否有有效数据，没有则先不渲染
+      console.log('data-objects:', container.getAttribute('data-objects')); 
+      // 是否有有效数据
       const dataStr = container.getAttribute('data-objects');
       if (!dataStr || dataStr === '[]' || dataStr === 'null') {
         console.log('容器没有有效数据，等待后续更新');
         return;
       }
-      
       try {
         const objects = JSON.parse(dataStr);
         if (!objects || objects.length === 0) {
@@ -40,9 +32,7 @@ export function ThreePreviewWrapper() {
       } catch (e) {
         console.log(e,'JSON 解析失败，等待后续更新');
         return;
-      }
-      
-      // 标记为已渲染
+      }   
       container.setAttribute('data-rendered', 'true');
       renderedContainers.current.add(container);
       
@@ -51,7 +41,7 @@ export function ThreePreviewWrapper() {
       console.log('ThreeScene 已渲染到容器');
     };
     
-    // 使用 MutationObserver 监听动态添加的占位符
+    // 监听动态添加的占位符
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         mutation.addedNodes.forEach((node) => {

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 // import { createRoot } from 'react-dom/client';
 // import ThreeScene from '../Three/ThreeScene';
-
+import { parseAIStream } from "@/lib/chat-stream";
 export interface Message {
   id: number;
   role: 'user' | 'assistant';
@@ -31,18 +31,7 @@ export const useChat = () => {
     }
   }, [input]);
 
-  // // 在聊天消息中自动查找并渲染 3D 预览内容
-  // useEffect(() => {
-  //   // 找到所有生成的 3D 占位符
-  //   const containers = document.querySelectorAll('.three-preview:not([data-rendered])');
-  //   containers.forEach(container => {
-  //     container.setAttribute('data-rendered', 'true');
-  //     const root = createRoot(container);
-  //     root.render(<ThreeScene container={container as HTMLElement} />);
-  //   });
-  // }, [messages]);
-
-  // 发送消息时，添加新消息到 messages
+  // 发送消息时，添加新消息到 messages && 流式
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
     const userContent = input;
@@ -67,47 +56,25 @@ export const useChat = () => {
 
       if (!response.ok) throw new Error("请求后端 API失败");
       
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error("无法读取响应流");
-      }
-      const decoder = new TextDecoder();
-      let fullContent = "";
-      while(true) {
-        const { done, value } = await reader.read()
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
-        for (const line of lines) {
-          const trimmedLine = line.trim();
-          if (!trimmedLine) continue;
-          if (trimmedLine === "[DONE]" || trimmedLine === "data: [DONE]") {
-            continue;
-          }
-          if (trimmedLine.startsWith("data:")) {
-            try {
-              const data = JSON.parse(trimmedLine.slice(6));
-              const deltaContent = data.choices?.[0]?.delta?.content || "";
-              if (deltaContent) {
-                fullContent += deltaContent;
-                setMessages((prev) => {
-                  const newMessages = [...prev];
-                  const lastIndex = newMessages.length - 1;
-                  if (newMessages[lastIndex].id === aiMessageId) {
-                    newMessages[lastIndex] = {
-                      ...newMessages[lastIndex],
-                      content: fullContent,
-                    };
-                  }
-                  return newMessages;
-                });
-              };
-            } catch(error) {
-              console.error(`JSON 解析失败:`, error);
+      let fullContent = ""; // 闭包变量，记录累计内容
+
+      await parseAIStream(response, (deltaContent) => {
+        fullContent += deltaContent;
+        
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          const lastIndex = newMessages.length - 1;
+          
+          // 确保更新的是对应的 AI 消息 ID
+          if (newMessages[lastIndex].id === aiMessageId) {
+            newMessages[lastIndex] = {
+              ...newMessages[lastIndex],
+              content: fullContent,
             };
           }
-        }
-      }
+          return newMessages;
+        });
+      });
 
     } catch(error) {
       console.error("出错啦:", error);
