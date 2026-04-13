@@ -1,8 +1,8 @@
 // src/app/admin/page.tsx (部分核心代码)
 "use client";
 import { useState, useRef } from "react";
-import { Upload, FileText, CheckCircle } from "lucide-react";
-
+import { Upload, FileText, CheckCircle, MessageSquare} from "lucide-react";
+import Link from "next/link";
 export default function AdminPage() {
   const [file, setFile] = useState<File | null>(null);
   const [text, setText] = useState("");
@@ -34,7 +34,12 @@ export default function AdminPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-6 text-black">
       <h1 className="text-2xl font-bold">知识库录入后台</h1>
-      
+      <nav className="flex items-center gap-4">
+        <Link href="/" className="flex items-center gap-1 text-sm text-gray-600 hover:text-blue-500 transition-colors py-1 px-2 rounded-md hover:bg-gray-100">
+          <MessageSquare size={18} />
+          <span className="hidden md:inline">返回聊天</span>
+        </Link>
+      </nav>
       <div className="grid grid-cols-2 gap-6">
         {/* 左侧：文件上传区 */}
         <div 
