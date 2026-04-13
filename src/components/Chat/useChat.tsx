@@ -34,10 +34,9 @@ export const useChat = () => {
   // 发送消息时，添加新消息到 messages && 流式
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
-    const userContent = input;
     setInput("");
     setIsLoading(true);
-
+    const userContent = input;
     const userMessage: Message = { id: Date.now(), role: "user", content: userContent };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
@@ -55,7 +54,7 @@ export const useChat = () => {
       });
 
       if (!response.ok) throw new Error("请求后端 API失败");
-      
+
       let fullContent = ""; // 闭包变量，记录累计内容
 
       await parseAIStream(response, (deltaContent) => {
