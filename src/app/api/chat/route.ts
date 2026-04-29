@@ -1,51 +1,100 @@
-import { NextResponse } from "next/server";;
-import { getFullContext } from "@/lib/rag";
-import { getSystemPrompt } from "@/lib/prompts";
-export async function POST(req: Request) {
-  try {
-    const { messages } = await req.json();
-    const userQuery = messages[messages.length - 1].content;
-    // 1. 获取增强背景
-  const context = await getFullContext(userQuery);
-  
-  // 2. 组装消息
-  const fullMessages = [
-    { role: "system", content: getSystemPrompt(context.text) },
-    ...messages
-  ];
 
-  // 3. 请求 DeepSeek 并返回流
-    const response =  await fetch("https://api.deepseek.com/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.DEEPSEEK_API_KEY}`
+import OpenAI from "openai";
+import { getContext } from  "@/lib/rag";
+import { getSystemPrompt } from "@/lib/prompts";
+
+const deepseek = new OpenAI({
+  apiKey: process.env.DEEPSEEK_API_KEY,
+  baseURL: "https://api.deepseek.com/v1",
+})
+
+export const tuntione =  "edge";
+
+export async function POST(req: Request) {
+  const { messages } =  await req.json();
+  const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+    {
+      type: "function",
+      function: {
+        name: "get_local_knowledge",
+        description: "检索个人日记、3D模型指令或通用文档。当用户询问具体事实、过去记录或3D操作建议时调用。",
+        parameters: {
+          type: "object",
+          properties: {
+            query: { type: "string", description: "搜索关键词" },
+            category: { 
+              type: "string", 
+              enum: ["diary_assistant", "general_knowledge", "my_3d_knowledge"],
+              description: "库分类"
+            },
+          },
+          required: ["query", "category"],
+        },
       },
-      body: JSON.stringify({
-        model: "deepseek-chat",
-        messages: fullMessages,
-        stream: true,
-      }),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      return NextResponse.json(
-        { error: `DeepSeek API 错误: ${error.error?.message || '未知错误'}` },
-        { status: response.status }
-      );
+    },
+  ];
+  // 第一次请求：判断意图
+  const response = await deepseek.chat.completions.create({
+    model: "deepseek-chat",
+    messages: [
+      { role: "system", content: getSystemPrompt("") },
+      ...messages
+    ],
+    tools,
+    tool_choice: "auto",
+  });
+  const firstMsg = response.choices[0].message;
+  let finalStreamResponse;
+  if (firstMsg.tool_calls && firstMsg.tool_calls.length > 0) {
+    const toolMsgs: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [...messages, firstMsg];
+    
+    for(const toolCall of firstMsg.tool_calls) {
+      if (toolCall.type === 'function') {
+        const { query, category } = JSON.parse(toolCall.function.arguments);
+        const context = await getContext(query, category);
+
+        toolMsgs.push({
+          role: "tool",
+          tool_call_id: toolCall.id,
+          content: context || "未找到相关内容",
+        } as OpenAI.Chat.Completions.ChatCompletionToolMessageParam);
+      }
     }
-    return new NextResponse(response.body, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
+
+    // 第二次请求：结合工具结果生成最终回答
+    finalStreamResponse = await deepseek.chat.completions.create({
+      model: "deepseek-chat",
+      messages: toolMsgs,
+      stream: true,
     });
-  } catch(error) {
-    console.error("API 调用失败:", error);
-    return NextResponse.json(
-      {error: "AI 接口调用失败"},
-      {status: 500}
-    )
+  } else {
+    // 普通对话逻辑
+    finalStreamResponse = await deepseek.chat.completions.create({
+      model: "deepseek-chat",
+      messages: [{ role: "system", content: getSystemPrompt("") }, ...messages],
+      stream: true,
+    });
   }
+  
+
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      for await (const chunk of finalStreamResponse) {
+        // 构建符合 SSE 格式的字符串：data: {"choices": [...]}
+        const text = `data: ${JSON.stringify(chunk)}\n\n`;
+        controller.enqueue(encoder.encode(text));
+      }
+      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      controller.close();
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+    },
+  });
 }

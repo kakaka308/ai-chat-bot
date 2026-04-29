@@ -4,7 +4,34 @@ import { Chroma } from "@langchain/community/vectorstores/chroma";
 import { OllamaEmbeddings } from "@langchain/ollama";
 import { Document } from "@langchain/core/documents";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
+import { ChromaClient } from "chromadb";
 
+
+const client = new ChromaClient({
+  path: "http://localhost:8000",
+});
+// 获取知识库列表
+export async function GET() { 
+  try {
+    const collections = await client.listCollections();
+    const detailList = await Promise.all(
+      collections.map(async (collectionName) => {
+        const collection = await client.getCollection({
+          name: collectionName.name,
+        });
+        const count = await collection.count();
+        return {
+          name: collectionName.name,
+          count,
+        };
+      })
+    );
+    return NextResponse.json(detailList);
+  } catch (error) {
+    console.error("获取知识库列表失败:", error);
+    return NextResponse.json({ error: "内部服务器错误" }, { status: 500 });
+  }
+}
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
@@ -83,3 +110,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "内部服务器错误" }, { status: 500 });
   }
 }
+
