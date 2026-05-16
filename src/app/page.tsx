@@ -1,34 +1,19 @@
-"use client";
+// src/app/page.tsx
+import { getChatSessions } from "@/lib/db-operations";
+import { ChatLayout } from "@/components/ChatLayout";
 
-import { 
-  ChatHeader, 
-  ChatMessageList, 
-  ChatInput, 
-  useChat 
-} from '@/components/Chat';
-export default function ChatPage() {
-  const {
-    messages,
-    input,
-    setInput,
-    isLoading,
-    handleSend,
-    textareaRef,
-  } = useChat();
+export default async function ChatPage() {
+  const sessions = await getChatSessions("default_user");
+  
+  // 序列化 sessions 数据（处理 ObjectId 和 Date）
+  const serializedSessions = sessions.map(session => ({
+    _id: session._id?.toString(),
+    userId: session.userId,
+    title: session.title,
+    createdAt: session.createdAt.toISOString(),
+    updatedAt: session.updatedAt.toISOString(),
+    messageCount: session.messages.length,
+  }));
 
-  return (
-    <div className="flex flex-col h-screen bg-gray-100">
-      <ChatHeader />
-      
-      <ChatMessageList messages={messages} isLoading={isLoading} />
-      
-      <ChatInput
-        input={input}
-        setInput={setInput}
-        isLoading={isLoading}
-        handleSend={handleSend}
-        textareaRef={textareaRef}
-      />
-    </div>
-  );
+  return <ChatLayout initialSessions={serializedSessions} />;
 }
